@@ -1,0 +1,197 @@
+#' Create Budget Directory
+#' Creates directory for storing some type of budget data in a data/output/ directory
+#'
+#' @param filetype String name of directory that dir_string directory will be stored in
+#' @param dir_string String name of sub-directory to create in filetype directory. Default null if just want to create one new directory in data/output/
+#'
+#' @return Subdirectory (and/or parent directory) in data/output directory
+#' @export
+#'
+#' @examples{
+#' dir_budg("parent_dir", "sub_dir")
+#'
+#' dir_budget("parent_dir")
+#'
+#' }
+dir_budg <- function(filetype, dir_string = NULL){
+
+  if (!dir.exists("./data")){
+    dir.create("./data")
+  }
+
+
+  # create standard filename
+  # browser()
+
+  if (!dir.exists("./data/output")) dir.create("./data/output")
+
+  if (!dir.exists(paste0("./data/output/", filetype))) dir.create(paste0("./data/output/", filetype))
+
+  # check if directory exists
+  if (!(is.null(dir_string))){
+    filepath <- paste0("./data/output/", filetype, "/", dir_string, "/")
+
+    if (!dir.exists(paths = filepath)){
+      dir.create(filepath)
+    }
+  }
+
+}
+
+#' Write Dataframe to Excel
+#' Write dataframe to Excel formatted as a table
+#'
+#' @param df Dataframe to write to an Excel table
+#' @param filename Name of output file, including directory
+#'
+#' @return Outputs Excel document to filename
+#' @export
+#'
+#' @examples{
+#' write_ouput(mtcars, "./mtcars.xlsx")
+#' }
+write_output <- function(df, filename){
+  openxlsx::write.xlsx(df, file = filename, asTable = T, colWidths = "auto")
+}
+
+
+#' Add worksheet data
+#'
+#' Adds a budget-dataframe to a sheet of an openxlsx Excel workbook, and formats sheet for output
+#'
+#' @param budget_wb An openxlsx Excel workbook
+#' @param df Budget dataframe to add to workbook
+#' @param sheetname Name of sheet to add budget dataframe to as string
+#' @param .newwb Whether to return the budget workbook at the end of the function; defaults F, just modifying the existing workbook but returning nothing
+#'
+#' @return Function doesn't return anything unless .newwb = T, but adds a worksheet to an existing openxlsx workbook with formatted data
+#' @export
+#'
+#' @examples
+add_ws_data <- function(budget_wb, df, sheetname, .newwb = F){
+
+  openxlsx::addWorksheet(wb = budget_wb, sheetName = sheetname)
+  openxlsx::writeDataTable(wb = budget_wb, sheet = sheetname, x = df)
+  openxlsx::setColWidths(wb = budget_wb, sheet = sheetname, cols = 1:length(colnames(df)), widths = "auto")
+
+  yr_cols <- grep("(\\$)|(Fy)", colnames(df))
+
+  pct_col <- grep("\\%", colnames(df))
+
+  # walk(yr_cols, ~ {
+  #   class(df[.x]) <<- "comma"
+  # })
+
+  curr_format <- openxlsx::createStyle(numFmt = "$#,##0")
+  pct_format <- openxlsx::createStyle(numFmt = "PERCENTAGE")
+
+  openxlsx::addStyle(wb = budget_wb, sheet = sheetname, style = curr_format, cols = yr_cols, rows = 1:nrow(df) + 1, gridExpand = T)
+  openxlsx::addStyle(wb = budget_wb, sheet = sheetname, style = pct_format, cols = pct_col, rows = 1:nrow(df) + 1, gridExpand = T)
+
+  if (.newwb){
+    return(budget_wb)
+  }
+
+}
+
+
+#' Create department expenditure tables
+#'
+#' Creates Excel workbook of standard Departmental expenditure tables for purpose of sharing with departments
+#'
+#' @param dept_filter Department number
+#'
+#' @return Excel workbook populated with different sheets reflecting different levels of budget data
+#' @export
+#'
+#' @examples
+dept_exp_tables <- function(dept_filter, bud_dept_list, fy = 2023){
+
+  budget_wb <- openxlsx::createWorkbook()
+
+  minusthreefy <- fy - 2
+
+  minustwofy <- fy - 2
+
+  minusonefy <- fy - 1
+
+  ytdactcol <- grep(glue::glue("yr{minustwofy}_{minusonefy}\\.ytd\\.activity\\.through"), tpbudget::pull_year_cols(bud_dept_list$fund_department), value = T)
+
+  yrsdefault <- c(glue::glue("yr{minusthreefy}_{minustwofy}.total.activity"),
+                  ytdactcol,
+                  glue::glue("yr{minustwofy}_{minusonefy}.total.budget.{minustwofy}_{minusonefy}.project"),
+                  glue::glue("yr{minsonefy}_{fy}.total.budget.{minusonefy}_{fy}.prelim"),
+                  glue::glue("chng_{minusonefy}_{fy}_tot"),
+                  glue::glue("chng_{minusonefy}_{fy}_pct"))
+
+  # base prep of dataframe for departments
+  df_prep <- function(dfbase, selectcols){
+
+    selectcols <- c(selectcols, yrsdefault)
+
+    dfbase %>%
+      dplyr::ungroup %>%
+      dplyr::filter(department_num == dept_filter) %>%
+      dplyr::select(selectcols) %>%
+      tpbudget::budget_rename()
+  }
+
+  dept_perstype <- df_prep(bud_dept_list$fund_department_perstype, c("fund", "department", "perstype"))
+
+  dept_perstype_account <- df_prep(bud_dept_list$fund_department_perstype_accountnum, c("fund", "department", "perstype", "accountnum"))
+
+  div_perstype_account <- df_prep(bud_dept_list$fund_department_division_perstype_accountnum, c("fund", "division", "perstype", "accountnum"))
+
+  dept_div <- df_prep(bud_dept_list$fund_department_division, c("fund", "department", "division"))
+
+  div_operating <- df_prep(bud_dept_list$fund_department_division_perstype, c("fund", "department", "division", "perstype"))
+
+  dept_category <- df_prep(bud_dept_list$fund_department_category, c("fund", "department", "category"))
+
+  dept_fund <- df_prep(bud_dept_list$department_fund, c("fund"))
+
+  add_ws_data(budget_wb = budget_wb, dept_fund, sheetname = "dept_overall")
+  add_ws_data(budget_wb = budget_wb, dept_perstype, sheetname = "depart_operating")
+  add_ws_data(budget_wb = budget_wb, dept_div, sheetname = "depart_div")
+  add_ws_data(budget_wb = budget_wb, dept_category, sheetname = "depart_category")
+  add_ws_data(budget_wb = budget_wb, dept_perstype_account, sheetname = "depart_detail")
+  add_ws_data(budget_wb = budget_wb, div_operating, sheetname = "div_operating")
+  add_ws_data(budget_wb = budget_wb, div_perstype_account, sheetname = "div_detail")
+
+  if (dept_filter == "3000"){
+
+    fund_spec <-  bud_dept_list$fund_accountnum %>%
+      dplyr::ungroup %>%
+      dplyr::filter(fund_desc %in% c("Special Revenue Fund", "Stormwater Management Fund")) %>%
+      dplyr::select(c("fund", "accountnum", yrsdefault)) %>%
+      tpbudget::budget_rename()
+
+    tpbudget::add_ws_data(budget_wb = budget_wb, fund_spec, sheetname = "funds")
+
+  }
+
+  tpbudget::dir_budg("meetings")
+
+  openxlsx::saveWorkbook(budget_wb, file = paste0("./data/output/meetings/", dept_filter, ".xlsx"), overwrite = T)
+
+}
+
+
+#' Quick Excel Datatable
+#'
+#' Saves a dataframe as a quick, formatted Excel datatable in one step
+#'
+#' @param df Dataframe to save
+#' @param fileend String name of Excel file (omit .xlsx)
+#' @param directory Directory to save file in; default ./data/output
+#'
+#' @return Nothing, but saves dataframe as Excel workbook
+#' @export
+#'
+#' @examples
+quick_datatbl <- function(df, fileend, directory = "./data/output/"){
+  openxlsx::write.xlsx(df, paste0(directory, fileend, ".xlsx"), asTable = T, overwrite = T, colWidths = "auto")
+}
+
+
+
