@@ -88,7 +88,7 @@ transform_num <- function(df, colname, .numdec = 2, .percsub = NULL){
 
 #' Read Performance Data
 #'
-#' Reads and formats standard Departmental performance tables. Assumes performance tables saved in Workbook organized by Department titled "perf_[department number].xlsx", and that each sheet of the table corresponds to one division.
+#' Reads and formats standard Departmental performance tables. Assumes performance tables saved in Workbook organized by Department titled "perf_departmentnumber.xlsx", and that each sheet of the table corresponds to one division.
 #'
 #' @param dept Department number of Department reading performance data on.
 #' @param sheet Name of sheet containing performance data reading in.
@@ -127,7 +127,7 @@ perf_read <- function(dept, sheet, .numdec = 2, .percsub = NULL, dirpath = "./da
 #'
 #' @examples
 flex_performancedata <- function(df){
-  flextable(df) %>%
+  flextable::flextable(df) %>%
     flextable::border_inner(border = officer::fp_border(color = "gray", width = 0.5)) %>%
     flextable::border_outer(border = officer::fp_border(color = "gray", width = 0.5)) %>%
     flextable::font(fontname = "arial") %>%
