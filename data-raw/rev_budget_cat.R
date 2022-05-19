@@ -77,4 +77,4 @@ rev_budget_cat <- purrr::map2_dfr(rev_budget_cat, names(rev_budget_cat), functio
 
 })
 
-usethis::use_data(rev_budget_categories, overwrite = TRUE)
+usethis::use_data(rev_budget_cat, overwrite = TRUE)

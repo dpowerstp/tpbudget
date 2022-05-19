@@ -357,19 +357,20 @@ read_process_extract <- function(filepath = "./data/Budget Extract Report Custom
 #' @param category_num_col Data-masked column identifying the category number; default category_num
 #' @param division_col Data-masked column identifying the full division; defaults division
 #' @param accountnum_desc_col Data-masked column identifying the account number; defaults accountnum_desc
+#' @param div_desc Data-masked column identifying description of division; defaults division_desc
 #'
 #' @return Dataframe with perstype column of factor type categorizing expenditures as "Personnel" or "Other Operating Expenses"
 #' @export
 #'
 #' @examples
-recode_personnel_other <- function(df, category_num_col = category_num, division_col = divisions, accountnum_desc_col = accountnum_desc){
+recode_personnel_other <- function(df, category_num_col = category_num, division_col = division, div_desc = division_desc, accountnum_desc_col = accountnum_desc){
 
 
   df <- df %>%
     dplyr::mutate(perstype = dplyr::case_when({{category_num_col}} == "40" ~ "Personnel",
-                                grepl("^9000", division) ~ {{accountnum_desc_col}},
-                                grepl("^[8-9][0-9]", division) ~ {{division_desc}},
-                                T ~ "Other Operating Expenses"))
+                                              grepl("^9000", {{division_col}}) ~ {{accountnum_desc_col}},
+                                              grepl("^[8-9][0-9]", {{division_col}}) ~ {{div_desc}},
+                                              T ~ "Other Operating Expenses"))
 
   persunique <- grep("(Personnel)|(Other Operating Expenses)", df[["perstype"]] %>% unique, value = T, invert = T)
 

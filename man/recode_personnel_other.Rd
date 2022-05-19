@@ -8,7 +8,8 @@ Code expenditures as perosonnel, operating, or non-departmental types}
 recode_personnel_other(
   df,
   category_num_col = category_num,
-  division_col = divisions,
+  division_col = division,
+  div_desc = division_desc,
   accountnum_desc_col = accountnum_desc
 )
 }
@@ -18,6 +19,8 @@ recode_personnel_other(
 \item{category_num_col}{Data-masked column identifying the category number; default category_num}
 
 \item{division_col}{Data-masked column identifying the full division; defaults division}
+
+\item{div_desc}{Data-masked column identifying description of division; defaults division_desc}
 
 \item{accountnum_desc_col}{Data-masked column identifying the account number; defaults accountnum_desc}
 }
