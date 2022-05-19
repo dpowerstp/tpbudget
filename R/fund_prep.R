@@ -54,7 +54,7 @@ df_budg_rec_table <- function(df_rev, pivot = F){
 
   if (pivot){
     grped_df <- grped_df %>%
-      dplyr::pivot_longer(cols = colnames(grped_df))
+      tidyr::pivot_longer(cols = colnames(grped_df))
   }
   grped_df
 

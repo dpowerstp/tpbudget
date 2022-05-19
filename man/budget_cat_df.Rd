@@ -15,7 +15,7 @@ A data frame with 147 rows and 4 variables:
 
 A data frame with 147 rows and 4 variables:
 \describe{
-\item{budget_cat_overall_num }{Number of budget category used in City tables}
+\item{budget_cat_overall_num }{Number of budget category used in City tables. Some of these are currently unassigned}
 \item{budget_cat_overall_desc}{Description of budget category used in City tables}
 \item{accountnum_num}{Account number associated with budget categories}
 \item{budget_cat_overall}{Combination of name and number associated with budget categories used in City tables}

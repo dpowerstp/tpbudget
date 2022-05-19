@@ -16,7 +16,7 @@ plot_bud_pies <- function(df_fund, namecol, yrcol) {
   quo_name <- rlang::enquo(namecol)
   df <- df %>%
     dplyr::ungroup %>%
-    dplyr::mutate(dplyr::across(.cols = tidyselect::where(is.numeric), abs)) %>%
+    dplyr::mutate(dplyr::across(.cols = where(is.numeric), abs)) %>%
     dplyr::filter({{yrcol}} != 0)
 
   plotly::plot_ly(data = df,

@@ -101,7 +101,7 @@ fin_cat <- tpbudget::finance_categories %>%
 fin_cat_join_data <- fin_cat %>%
   dplyr::mutate(accountnum_desc_small = tolower(accountnum_desc)) %>%
   dplyr::rename(accountnum_ron = accountnum_desc) %>%
-  dplyr::full_join(accountinfo) %>%
+  dplyr::full_join(tpbudget::accounts_2019_2023) %>%
   dplyr::mutate(joindesc = accountnum_desc == accountnum_ron) %>%
   dplyr::select(budget_cat_overall_desc, account.name, accountnum_desc, accountnum_ron, accountnum_desc_small, joindesc, accountnum, accountnum_num, department, division) %>%
   arrange(accountnum_ron)
