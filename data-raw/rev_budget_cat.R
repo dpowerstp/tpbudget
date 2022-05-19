@@ -63,7 +63,7 @@ rev_budget_cat <- list(
 
 
 # turn list into df
-rev_budget_categories <- purrr::map2_dfr(rev_budget_cat, names(rev_budget_cat), function(deptlist, deptname){
+rev_budget_cat <- purrr::map2_dfr(rev_budget_cat, names(rev_budget_cat), function(deptlist, deptname){
 
   dept_df <- purrr::map2_dfr(deptlist, names(deptlist), function(accountnumvec, budgetcategory){
 
@@ -77,4 +77,4 @@ rev_budget_categories <- purrr::map2_dfr(rev_budget_cat, names(rev_budget_cat), 
 
 })
 
-usethis::use_data(rev_budget_cat, overwrite = TRUE)
+usethis::use_data(rev_budget_categories, overwrite = TRUE)
