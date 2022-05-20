@@ -387,13 +387,16 @@ recode_personnel_other <- function(df, category_num_col = category_num, division
 #' From a base-processed Tyler Extract Report dataset, calculates change in year-to-year values for a given fiscal year, and differences between adopted and projected expenditures for a given fiscal year
 #'
 #' @param df Tyler Extract Report dataset processed by base_report_extract()
-#' @param curr_fy Current fiscal year
+#' @param curr_fy Current fiscal year; default 2022
+#' @param propadpt "proposed" or "adopted;" determines what column is used to calculate budget changes for next year
 #'
-#' @return Dataframe with columns for
+#' @return Dataframe with columns for change in year to year budget data, from projected to next
 #' @export
 #'
 #' @examples
-calc_yearcol <- function(df, curr_fy = 2022){
+calc_yearcol <- function(df, curr_fy = 2022, propadpt = "adopted"){
+
+  # browser()
 
   if (!is.numeric(curr_fy)){
     return("Error; current fiscal year is not numeric")
@@ -406,6 +409,21 @@ calc_yearcol <- function(df, curr_fy = 2022){
   curr_years <- grep(paste0("^yr", curr_fy - 1, "_", curr_fy), df_years, value = T)
   act_year_last <- grep(pattern = paste0("^yr", curr_fy - 2, "_", curr_fy - 1), df_years, value = T)
   next_year <- grep(paste0("^yr", curr_fy, "_", curr_fy + 1), df_years, value = T)
+
+  if (length(next_year) > 1){
+    if (propadpt == "adopted"){
+      next_year <- grep("certified", next_year, value = T)
+
+    }
+
+    else if (propadpt == "proposed"){
+      next_year <- grep("prelim", next_year, value = T)
+    }
+
+    else{
+      stop("Error; trying to identify budget data for next year produced more than 1 result, and wasn't able to identify value from propadpt; check curr_fy and propadpt, and check that you downloaded the right dataset")
+    }
+  }
 
 
   # if (proposed){
@@ -437,7 +455,7 @@ calc_yearcol <- function(df, curr_fy = 2022){
   diff_proj_adpt_tot <- paste0("diff_adpt", curr_fy, "_prop", curr_fy, "_tot")
   diff_proj_adpt_pct <- paste0("diff_adpt", curr_fy, "_prop", curr_fy, "_pct")
 
-  message(glue::glue("Identifying change in projected to proposed expenditures as {{chng_tot}}, and change in adjusted to projected expenditures as {{diff_proj_adpt_tot}}"))
+  message(glue::glue("Identifying change in projected to proposed expenditures as {chng_tot}, and change in adjusted to projected expenditures as {diff_proj_adpt_tot}"))
 
   # diff prelim project
   # diff_prelim_projlast_tot <- paste0("_projlast", curr_fy, "_projlast", curr_fy, "_tot")
@@ -465,12 +483,13 @@ calc_yearcol <- function(df, curr_fy = 2022){
 #' @param df Tyler Budget Extract report expenditures or revenue dataset
 #' @param curr_fy Current fiscal year
 #' @param .missingcols Whether to print names of grouped-columns that are not present in the dataframe
+#' @param propadpt "proposed" or "adopted;" determines what column is used to calculate budget changes for next year
 #'
 #' @return List of datasets, grouped by different combinations of group columns
 #' @export
 #'
 #' @examples
-budget_list <- function(df, curr_fy = 2022, .missingcols = F){
+budget_list <- function(df, curr_fy = 2022, propadpt = "adopted", .missingcols = F){
   # browser()
 
   # columns to group data by
@@ -484,7 +503,7 @@ budget_list <- function(df, curr_fy = 2022, .missingcols = F){
   bud_grp_checkpres <- function(df, colsgrp){
     if (all(colsgrp %in% colnames(df))){
       output_df <- tpbudget::budget_group(df = df, colsgrp = colsgrp) %>%
-        tpbudget::calc_yearcol(curr_fy = curr_fy)
+        tpbudget::calc_yearcol(curr_fy = curr_fy, propadpt = propadpt)
 
       output_df
 
@@ -709,12 +728,13 @@ df_rename_yeartoyear <- function(df){
 #' @param dept_code Department code
 #' @param bud_extract_rev Base budget revenue dataset
 #' @param fy Fiscal year; default 2023
+#' @param propadpt "proposed" or "adopted;" determines what column is used to calculate budget changes for next year
 #'
 #' @return Dataframe of departmental revenues for a given department
 #' @export
 #'
 #' @examples
-gen_dept_summary_rev <- function(dept_code, bud_extract_rev, fy = 2023){
+gen_dept_summary_rev <- function(dept_code, bud_extract_rev, propadpt = "adopted", fy = 2023){
 
   # browser()
 
@@ -725,7 +745,7 @@ gen_dept_summary_rev <- function(dept_code, bud_extract_rev, fy = 2023){
   op_exp <- bud_extract_rev %>%
     dplyr::mutate(dplyr::across(yrs, ~ -.x)) %>%
     tpbudget::budget_group(colsgrp = c("fund", "department", "budget_cat_overall_desc")) %>%
-    tpbudget::calc_yearcol %>%
+    tpbudget::calc_yearcol(curr_fy = curr_fy, propadpt = propadpt) %>%
     dplyr::filter(department_num == dept_code) %>%
     dplyr::select(-yrs_too_early)
 
@@ -747,11 +767,11 @@ gen_dept_summary_rev <- function(dept_code, bud_extract_rev, fy = 2023){
 #' @export
 #'
 #' @examples
-gen_dept_summary_div <- function(dept_code, exp_df, fy = 2023){
+gen_dept_summary_div <- function(dept_code, exp_df, propadpt = "adopted", fy = 2023){
 
   # group by department and division
   grpdf <- tpbudget::budget_group(df = exp_df, colsgrp = c("department", "division")) %>%
-    tpbudget::calc_yearcol(curr_fy = fy)
+    tpbudget::calc_yearcol(curr_fy = fy, propadpt = propadpt)
 
   yrs_too_early_div <- tpbudget::find_yrstooearly(fy = fy, bud_extract_df = grpdf, "recent")
 
@@ -770,15 +790,16 @@ gen_dept_summary_div <- function(dept_code, exp_df, fy = 2023){
 #' @param dept_code Department code of Department to prepare dataframe for
 #' @param exp_df Base process Tyler expenditures dataframe
 #' @param fy Fiscal year preparing budget book for
+#' @param propadpt "proposed" or "adopted;" determines what column is used to calculate budget changes for next year
 #'
 #' @return
 #' @export
 #'
 #' @examples
-gen_dept_exp_ov <- function(dept_code, exp_df, fy = 2023){
+gen_dept_exp_ov <- function(dept_code, exp_df, propadpt = "adopted", fy = 2023){
 
   grpdf <- tpbudget::budget_group(df = exp_df, colsgrp = c("fund", "department")) %>%
-    tpbudget::calc_yearcol(curr_fy = fy)
+    tpbudget::calc_yearcol(curr_fy = fy, propadpt = propadpt)
 
 
   yrs_too_early_div <- tpbudget::find_yrstooearly(fy = fy, bud_extract_df = grpdf, "recent")
@@ -796,15 +817,16 @@ gen_dept_exp_ov <- function(dept_code, exp_df, fy = 2023){
 #' @param divcode Division code
 #' @param exp_df Base process Tyler expenditures dataframe
 #' @param fy Fiscal year preparing budget book for; default 2023
+#' @param propadpt "proposed" or "adopted;" determines what column is used to calculate budget changes for next year
 #'
 #' @return Dataframe with division expenditures overall
 #' @export
 #'
 #' @examples
-div_overall <- function(divcode, exp_df, fy = 2023){
+div_overall <- function(divcode, exp_df, propadpt = "adopted", fy = 2023){
 
   grpdf <- tpbudget::budget_group(df = exp_df, colsgrp = c("department", "division")) %>%
-    tpbudget::calc_yearcol(curr_fy = fy)
+    tpbudget::calc_yearcol(curr_fy = fy, propadpt = propadpt)
 
   yrs_too_early_div <- tpbudget::find_yrstooearly(fy = fy, bud_extract_df = grpdf, "recent")
 
@@ -821,15 +843,16 @@ div_overall <- function(divcode, exp_df, fy = 2023){
 #' @param dept_code Department code
 #' @param exp_df Base process Tyler expenditures dataframe
 #' @param fy Fiscal year preparing budget book for; default 2023
+#' @param propadpt "proposed" or "adopted;" determines what column is used to calculate budget changes for next year
 #'
 #' @return Dataframe of departmental expenditures by personnel/operating expenditures for visualization in tables
 #' @export
 #'
 #' @examples
-gen_dept_summary_perstype <- function(dept_code, exp_df, fy){
+gen_dept_summary_perstype <- function(dept_code, exp_df, propadpt = "adopted", fy){
 
   grpdf <- tpbudget::budget_group(df = exp_df, colsgrp = c("fund", "department", "perstype", "budget_cat_overall")) %>%
-    tpbudget::calc_yearcol(curr_fy = fy)
+    tpbudget::calc_yearcol(curr_fy = fy, propadpt = propadpt)
 
   yrs_too_early_deptperstype <- tpbudget::find_yrstooearly(fy = fy, bud_extract_df = grpdf, "recent")
 
@@ -848,15 +871,16 @@ gen_dept_summary_perstype <- function(dept_code, exp_df, fy){
 #' @param divcode Division Code
 #' @param exp_df Base process Tyler expenditures dataframe
 #' @param fy Fiscal year preparing budget book for; default 2023
+#' @param propadpt "proposed" or "adopted;" determines what column is used to calculate budget changes for next year
 #'
 #' @return Dataframe of division expenses by personnel/operating
 #' @export
 #'
 #' @examples
-div_perstype <- function(divcode, exp_df, fy = 2023){
+div_perstype <- function(divcode, exp_df, propadpt = "adopted", fy = 2023){
 
   grpdf <- tpbudget::budget_group(df = exp_df, colsgrp = c("fund", "department", "division", "perstype", "budget_cat_overall")) %>%
-    tpbudget::calc_yearcol(curr_fy = fy)
+    tpbudget::calc_yearcol(curr_fy = fy, propadpt = propadpt)
 
   yrs_too_early_div <- tpbudget::find_yrstooearly(fy = fy, bud_extract_df = grpdf, "recent")
 

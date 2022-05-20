@@ -39,18 +39,20 @@ df_rev_exp_chngfund <- function(df_rev, df_exp){
 #'
 #' @param df_rev Revenue dataframe
 #' @param pivot Whether to pivot dataframe into longer format
+#' @param curr_fy Current fiscal year; default 2022
+#' @param propadpt "proposed" or "adopted;" determines what column is used to calculate budget changes for next year
 #'
 #' @return Grouped revenue dataframe
 #' @export
 #'
 #' @examples
-df_budg_rec_table <- function(df_rev, pivot = F){
+df_budg_rec_table <- function(df_rev, curr_fy = 2022, propadpt = "adopted", pivot = F){
   yrcols <- tpbudget::pull_year_cols(df_rev)
 
   grped_df <- df_rev %>%
     dplyr::group_by() %>%
     dplyr::summarize(dplyr::across(.cols = yrcols, .fns = ~ round(sum(.x, na.rm = T), digits = 2))) %>%
-    tpbudget::calc_yearcol()
+    tpbudget::calc_yearcol(curr_fy = curr_fy, propadpt = propadpt)
 
   if (pivot){
     grped_df <- grped_df %>%
@@ -62,7 +64,7 @@ df_budg_rec_table <- function(df_rev, pivot = F){
 
 
 
-#' Title
+#' Base-dataframe for proposed/adopted budget tables
 #'
 #' function to generate base df for changes to proposed/adopted budget table
 #'
@@ -70,12 +72,13 @@ df_budg_rec_table <- function(df_rev, pivot = F){
 #' @param fund_ac Fund-acronym to filter dataframe to; default "GF" for general fund
 #' @param .currfy Fiscal-year for the concluding budget (not the fiscal year for the budget being prepared); default 2022
 #' @param filternot0 Whether to filter dataframe to rows where the difference between the adopted and proposed budget is not 0; default false
+#' @param propadpt "proposed" or "adopted;" determines what column is used to calculate budget changes for next year
 #'
 #' @return Dataframe summarized to fund-level expenditures and revenues
 #' @export
 #'
 #' @examples
-df_propadpt_chng <- function(df_exp, fund_ac = "GF", filternot0 = F, .currfy = 2022){
+df_propadpt_chng <- function(df_exp, fund_ac = "GF", filternot0 = F, propadpt = "adopted", .currfy = 2022){
 
   yrcols <- pull_year_cols(df_exp)
 
@@ -91,7 +94,7 @@ df_propadpt_chng <- function(df_exp, fund_ac = "GF", filternot0 = F, .currfy = 2
     dplyr::ungroup() %>%
     dplyr::group_by(fund_desc, department_desc, account.name) %>%
     dplyr::summarise(dplyr::across(.cols = yrcols, .fns = ~ round(sum(.x, na.rm = T), digits = 2))) %>%
-    tpbudget::calc_yearcol(curr_fy = .currfy)
+    tpbudget::calc_yearcol(curr_fy = .currfy, propadpt = propadpt)
   # filter to changes
 
   if (filternot0){
@@ -133,12 +136,14 @@ filter_fund <- function(df, fundac, fundaccol = fund_acronym){
 #' @param df_rev Base-revenue dataframe; bud_extract_rev
 #' @param df_exp Base-expenditures dataframe; bud_extract_dept
 #' @param .fundcol Column corresponding to recoded fund values; default fund_recode
+#' @param propadpt "proposed" or "adopted;" determines what column is used to calculate budget changes for next year
+#' @param curr_fy Current fiscal year; default 2022
 #'
 #' @return
 #' @export
 #'
 #' @examples
-df_all_op_funds <- function(df_rev, df_exp, .fundcol = fund_recode){
+df_all_op_funds <- function(df_rev, df_exp, propadpt = "adopted", curr_fy = 2022, .fundcol = fund_recode){
   yrcols <- tpbudget::pull_year_cols(df_rev)
 
   if (!all(yrcols == tpbudget::pull_year_cols(df_exp))){
@@ -157,7 +162,7 @@ df_all_op_funds <- function(df_rev, df_exp, .fundcol = fund_recode){
     dplyr::rename(category_desc = department_desc)
 
   op_fund_combo <- rbind(op_fund_rev, op_fund_expense) %>%
-    tpbudget::calc_yearcol()
+    tpbudget::calc_yearcol(curr_fy = curr_fy, propadpt= propadpt)
 
 }
 
