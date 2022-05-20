@@ -203,17 +203,17 @@ pt_outputtype <- function(df, rowvec = NULL, colvec = NULL, calcrow = F, .ptsave
 #'
 #' @param dept_code Code of department creating table for
 #' @param deptadjust Whether including adotped budget information and comparisons for sharing of table with departments; default F, so adopted budget information excluded
-#' @param bud_dept_list List of grouped budget expenditures
 #' @param fy Fiscal year for this budget book
+#' @param expdf Expense dataframe
 #'
 #' @return Flextable or pivottabler pivot-table of budget data
 #' @export
 #'
 #' @examples
-pt_render_dept_exp_ov <- function(dept_code, bud_dept_list, fy = 2023, deptadjust = F){
+pt_render_dept_exp_ov <- function(dept_code, expdf, fy = 2023, deptadjust = F){
   # browser()
 
-  tpbudget::pt_outputtype(tpbudget::gen_dept_exp_ov(dept_code = dept_code, bud_dept_list = bud_dept_list, fy = fy), rowvec = c("department_desc"), .ptsavename = paste0(dept_code, " department overall"), .caption = paste0(tpbudget::dept_pull(dept_code), " Department Expenditures Overall"), deptadjust  = deptadjust)
+  tpbudget::pt_outputtype(tpbudget::gen_dept_exp_ov(dept_code = dept_code, expdf = expdf , fy = fy), rowvec = c("department_desc"), .ptsavename = paste0(dept_code, " department overall"), .caption = paste0(tpbudget::dept_pull(dept_code), " Department Expenditures Overall"), deptadjust  = deptadjust)
 
 }
 
