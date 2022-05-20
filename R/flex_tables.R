@@ -213,7 +213,7 @@ pt_outputtype <- function(df, rowvec = NULL, colvec = NULL, calcrow = F, .ptsave
 pt_render_dept_exp_ov <- function(dept_code, expdf, fy = 2023, deptadjust = F){
   # browser()
 
-  tpbudget::pt_outputtype(tpbudget::gen_dept_exp_ov(dept_code = dept_code, expdf = expdf , fy = fy), rowvec = c("department_desc"), .ptsavename = paste0(dept_code, " department overall"), .caption = paste0(tpbudget::dept_pull(dept_code), " Department Expenditures Overall"), deptadjust  = deptadjust)
+  tpbudget::pt_outputtype(tpbudget::gen_dept_exp_ov(dept_code = dept_code, exp_df = expdf , fy = fy), rowvec = c("department_desc"), .ptsavename = paste0(dept_code, " department overall"), .caption = paste0(tpbudget::dept_pull(dept_code), " Department Expenditures Overall"), deptadjust  = deptadjust)
 
 }
 
