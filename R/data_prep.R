@@ -187,7 +187,7 @@ budget_group <- function(df, colsgrp){
 
   }
 
-  if (!all(colsgrp) %in% colnames(df)){
+  if (!all(colsgrp %in% colnames(df))){
     stop("Not all columns in colsgrp appear in dataframe")
   }
 
